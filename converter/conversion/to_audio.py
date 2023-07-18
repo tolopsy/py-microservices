@@ -25,7 +25,10 @@ def start(message, fs_video: GridFS, fs_audio: GridFS, channel: BlockingChannel)
         tempfile_dir=tempfile.gettempdir(),
         video_id=video_id
     )
-    audio.write_audiofile(audio_tf_path)
+    try:
+        audio.write_audiofile(audio_tf_path)
+    except Exception as err:
+        return f"failed to write audio to file: {err}"
 
     with open(audio_tf_path, "rb") as f:
         data = f.read()
@@ -39,12 +42,13 @@ def start(message, fs_video: GridFS, fs_audio: GridFS, channel: BlockingChannel)
         channel.basic_publish(
             exchange="",
             routing_key=AUDIO_QUEUE,
-            body=json.dumps[message],
+            body=json.dumps(message),
             properties=pika.BasicProperties(
                 delivery_mode=PERSISTENT_DELIVERY_MODE
             )
         )
     except Exception as err:
+        print(f"error publishing to audio queue: {err}")
         # entry point to initiate exponential backoff retry
         # and maybe log message in DLX
         # so that it is not forgotten.
