@@ -2,9 +2,11 @@ import jwt, os
 from datetime import datetime, timedelta
 from flask import Flask, request, current_app
 from flask_mysqldb import MySQL
+from flask_bcrypt import Bcrypt
 
 server = Flask(__name__)
 mysql = MySQL(server)
+bcrypt = Bcrypt(server)
 
 # NOTE: Accessing environment variables by dict indexing to
 # emphasize and force availability of the variables.
@@ -16,37 +18,39 @@ server.config["MYSQL_PASSWORD"] = os.environ["MYSQL_PASSWORD"]
 server.config["MYSQL_DB"] = os.environ["MYSQL_DB"]
 
 
-def create_jwt(username: str, is_admin: bool):
+def create_jwt(username: str, can_convert: bool):
     now = datetime.utcnow()
     payload = {
         "username": username,
         "exp": now + timedelta(days=1),
         "iat": now,
-        "admin": is_admin
+        "can_convert": can_convert
     }
     return jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
 
 
 @server.route("/login", methods=["POST"])
 def login():
-    auth = request.authorization
-    if not auth:
+    auth_data = request.get_json()
+    if not auth_data or not ("username" in auth_data and "password" in auth_data):
         return "missing credentials", 401
 
-    cursor = mysql.connection.cursor()
-    result = cursor.execute("SELECT email, password FROM user WHERE email=%s", (auth.username,))
+    username = auth_data["username"]
+    password = auth_data["password"]
 
-    if result == 0:
-        return "invalid credentials", 401
+    with mysql.connection.cursor() as cursor:
+        result = cursor.execute("SELECT email, password FROM user WHERE email=%s", (username,))
+        if result == 0:
+            return "invalid credentials", 401
 
-    user_row = cursor.fetchone()
-    _, password = user_row
+        user_row = cursor.fetchone()
 
-    # TODO: Don't compare raw password
-    if auth.password != password:
+    _, password_hash = user_row
+
+    if not bcrypt.check_password_hash(pw_hash=password_hash, password=password):
         return "invalid credentials", 401
     
-    return create_jwt(auth.username, is_admin=True)
+    return create_jwt(username, can_convert=True)
 
 @server.route("/validate", methods=["POST"])
 def validate():
@@ -70,6 +74,26 @@ def validate():
         return "invalid credentials", 401
     
     return decoded_jwt, 200
+
+@server.route("/signup", methods=["POST"])
+def signup():
+    auth_data = request.get_json()
+    if not auth_data or not ("username" in auth_data and "password" in auth_data):
+        return "set username and password to signup", 400
+
+    username = auth_data["username"]
+    password = auth_data["password"]
+
+    with mysql.connection.cursor() as cursor:
+        result = cursor.execute("SELECT email FROM user WHERE email=%s", (username,))
+        if result != 0:
+            return "taken! try another username", 400
+
+        password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
+        cursor.execute("INSERT INTO user (email, password) VALUES (%s, %s)", (username, password_hash))
+        mysql.connection.commit()
+    
+    return "successfully signed up", 200
 
 
 if __name__ == "__main__":
