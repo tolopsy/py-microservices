@@ -48,7 +48,7 @@ def start(message, fs_video: GridFS, fs_audio: GridFS, channel: BlockingChannel)
             )
         )
     except Exception as err:
-        print(f"error publishing to audio queue: {err}")
+        print(f"error publishing to audio queue: {err}")    # TODO: proper logging
         # entry point to initiate exponential backoff retry
         # and maybe log message in DLX
         # so that it is not forgotten.
