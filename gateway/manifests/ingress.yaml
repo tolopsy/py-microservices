@@ -3,14 +3,13 @@ kind: Ingress
 metadata:
   name: gateway-ingress
   annotations:
-    # TODO: In prod, ingress proxy body should be capped
+    # NOTE: In prod, ingress proxy body should be capped
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
 spec:
   rules:
-    # TODO: rename host
-    - host: toluvideo2audio.com
+    - host: video2audio.service
       http:
         paths:
           - path: /
