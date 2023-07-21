@@ -48,7 +48,9 @@ Ensure you have all the prequisites are installed and running
 
 4. Run `minikube tunnel` to start a tunnel process that create a network route with the host machine to allow external traffic reach services exposed by ingress rules (gateway and rabbitmq service)
 
-5. Run the following from the project directory:
+5. Update `secret.yaml` in notification manifests folder with your smtp details. (If you do not have an smtp host, You can create a test gmail address and use google smtp configurations)
+
+6. Run the following from the project directory:
 	- `kubectl apply -f ./auth/manifests/`
 	- `kubectl apply -f ./gateway/manifests/`
 	- `kubectl apply -f ./rabbitmq/manifests/`
@@ -56,6 +58,6 @@ Ensure you have all the prequisites are installed and running
 	- `kubectl apply -f ./notification/manifests/`
 
 
-### ToDo List:
+### Todo List:
 - Automate local setup with bash script
 - Include setup for production environment
