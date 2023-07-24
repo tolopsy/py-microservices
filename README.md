@@ -2,6 +2,12 @@
 
 A microservices-based video-to-audio conversion system that utilizes Kubernetes to orchestrate five containerized services.
 
+
+![Alt text](./video2audio.png?raw=true)
+
+Note: The design image above depicts how the services communicate with each other, and not the direction of data flow.
+
+
 ## Gateway service
 Handles requests from users. It makes requests to the auth service to create new users (signup), obtain json web token via the login endpoint and validates users for the `upload` and `download` requests.
 
@@ -58,6 +64,8 @@ Ensure you have all the prequisites are installed and running
 	- `kubectl apply -f ./notification/manifests/`
 
 
-### Todo List:
+### Further Considerations:
+- Add simple frontend
+- Use AWS S3 for file management instead of MongoDB
 - Automate local setup with bash script
 - Include setup for production environment
